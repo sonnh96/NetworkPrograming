@@ -5,8 +5,6 @@
     "password" : "pass2"},
     {"username" : "user3",
     "password" : "pass3"},
-	{"username" : "hello",
-	"password" : "1234"},
-	{"username" : "son123",
-	"password" : "mmmmmmmm"}
+	{"username" : "son1",
+	"password" : "12345"}
 ]

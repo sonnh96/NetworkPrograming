@@ -29,13 +29,13 @@ void send_subscribe(int sock, char *name, char *pwd) {
     write(sock, buff, strlen(buff));
 }
 
-void *recv_msg(void *sockfd) {
-
-}
-
-void *send_msg(void *sockfd) {
-
-}
+//void *recv_msg(void *sockfd) {
+//
+//}
+//
+//void *send_msg(void *sockfd) {
+//
+//}
 
 int main(int argc, char const *argv[]) {
 
@@ -46,6 +46,7 @@ int main(int argc, char const *argv[]) {
 
     int sockfd;
     struct sockaddr_in servaddr;
+    pthread_t recv, send;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
     servaddr.sin_family = AF_INET;
@@ -76,7 +77,9 @@ int main(int argc, char const *argv[]) {
             break;
         }
     }
-    pthread_create(&recvt, NULL, recv_msg, &sockfd);
+
+    
+    pthread_create(&recv, NULL, recv_msg, &sockfd);
     pthread_create(&send, NULL, send_msg, &sockfd);
 
     return 0;

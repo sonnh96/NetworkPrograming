@@ -48,9 +48,9 @@ struct Accounts decode_packet_connect(char *buff) {
     p = p + 1;
     struct Accounts a;
     strcpy(a.name, strtok(p, ","));
-    a.name[strlen(a.name) - 1] = '\0';
+    if(a.name[strlen(a.name)-1] == '\n')
+        a.name[strlen(a.name) - 1] = '\0';
     strcpy(a.pwd, strtok(NULL, ","));
-    a.pwd[strlen(a.pwd) - 1] = '\0';
     return a;
 }
 
