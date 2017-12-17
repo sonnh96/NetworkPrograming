@@ -23,9 +23,9 @@ void send_file(int sockfd, char *buff) {
 
 void recv_file(int sockfd, char *buff) {
     if ((*buff & 15) == 0) {
-        chat_user(sockfd, clients, nocl, buff, TRUE);
+        chat_user(sockfd, clients, nocl, buff, true);
     } else if ((*buff & 15) == 1) {
-        chat_room(sockfd, rooms, nor, clients, nocl, buff, TRUE);
+        chat_room(sockfd, rooms, nor, clients, nocl, buff, true);
     }
 }
 
@@ -59,9 +59,9 @@ void create_room(int sockfd, char *buff) {
 
 void check_publish(int sockfd, char *buff) {
     if ((*buff & 15) == 0) {
-        chat_user(sockfd, clients, nocl, buff, FALSE);
+        chat_user(sockfd, clients, nocl, buff, false);
     } else if ((*buff & 15) == 1) {
-        chat_room(sockfd, rooms, nor, clients, nocl, buff, FALSE);
+        chat_room(sockfd, rooms, nor, clients, nocl, buff, false);
     }
 }
 

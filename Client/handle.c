@@ -140,9 +140,9 @@ bool process_recv_file(int sockfd, char *filename) {
     }
     if (remain == file_size){
         printf("Recv complete\n");
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -175,8 +175,8 @@ bool process_send_file(int sockfd, char *filename) {
     }
     if (remain == file_size){
         printf("Send complete\n");
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }

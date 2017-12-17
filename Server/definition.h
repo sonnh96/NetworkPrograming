@@ -18,7 +18,6 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <jmorecfg.h>
 #include <sys/types.h>
 #include <stdbool.h>
 

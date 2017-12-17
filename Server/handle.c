@@ -32,7 +32,7 @@ bool create_account(struct Accounts a, struct Accounts acc[], int n) {
     int i;
     for (i = 0; i < n; i++) {
         if ((strcmp(acc[i].name, a.name) == 0))
-            return FALSE;
+            return false;
     }
     FILE *f = fopen("Users.json", "a+");
     fseeko(f, -2, SEEK_END);
@@ -46,7 +46,7 @@ bool create_account(struct Accounts a, struct Accounts acc[], int n) {
     fprintf(f, "%s", a.pwd);
     fprintf(f, "\"}\n]");
     fclose(f);
-    return TRUE;
+    return true;
 }
 
 struct Accounts decode_packet_connect(char *buff) {
@@ -70,9 +70,9 @@ bool authentication(struct Accounts a, struct Accounts acc[], int n) {
         }
     }
     if (count == 0)
-        return FALSE;
+        return false;
     else
-        return TRUE;
+        return true;
 }
 
 char *packet_connack(int y, int x) {
@@ -133,10 +133,10 @@ bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) 
     if (des != 0) {
         write(des, send, strlen(send) + 1);
         free(send);
-        return TRUE;
+        return true;
     } else{
         free(send);
-        return FALSE;
+        return false;
     }
 
 }
@@ -185,9 +185,9 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
     }
     free(send);
     if (des != 0) {
-        return TRUE;
+        return true;
     } else
-        return FALSE;
+        return false;
 }
 
 bool process_recv_file(int sockfd, char *filename) {
@@ -217,9 +217,9 @@ bool process_recv_file(int sockfd, char *filename) {
     }
     if (remain == file_size) {
         printf("Recv complete\n");
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
 
@@ -251,8 +251,8 @@ bool process_send_file(int sockfd, char *filename) {
     }
     if (remain == file_size) {
         printf("Send complete\n");
-        return TRUE;
+        return true;
     } else {
-        return FALSE;
+        return false;
     }
 }
