@@ -19,4 +19,4 @@ $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
 
 clean:
-	$(RM) $(TARGET) $(SRC)
+	$(RM) $(TARGET)

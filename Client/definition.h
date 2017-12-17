@@ -18,7 +18,9 @@
 #include <sys/select.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <jmorecfg.h>
 #include <sys/types.h>
+#include <stdbool.h>
 
 #define MAXLINE     1024
 #define SA  struct sockaddr
@@ -27,17 +29,14 @@
 #define CONNECT 1
 #define CONNACK 2
 #define PUBLISH 3
-#define PUBACK 4
+#define GET 4
 #define PUBREC 5
-#define PUBREL 6
-#define PUBCOMP 7
+#define CREATE 6
+#define ADD 7
 #define SUBSCRIBE 8
 #define SUBACK 9
-#define UNSUBSCRIBE 10
-#define UNSUBACK 11
-#define PINGREQ 12
-#define PINGRESP 13
-#define DISCONNECT 14
+#define SENDFILE 10
+#define DOWNFILE 11
 
 struct Accounts {
     char name[50];
@@ -55,5 +54,23 @@ void get_account();
 char *packet_connect(char *name, char *pwd);
 
 char *packet_subcribe(char *name, char *pwd);
+
+char *packet_publish(char *target, char *msg, int opt);
+
+int decode_packet_connack(char *packet);
+
+void decode_packet_pubrec(char *msg);
+
+char *packet_create(char *name);
+
+char *packet_sendfile(char *target, char *msg, int opt);
+
+char *packet_pubrec(char *msg);
+
+char *packet_add(int, char *, char *);
+
+bool process_send_file(int, char *);
+
+bool process_recv_file(int sockfd, char *filename);
 
 #endif //PROJECT_DEFINITION_H

@@ -26,20 +26,21 @@
 #define SA  struct sockaddr
 #define LISTENQ     1024
 
+#define MAXLINE     1024
+#define SA  struct sockaddr
+#define LISTENQ     1024
+#define HEADER_LEN 1
 #define CONNECT 1
 #define CONNACK 2
 #define PUBLISH 3
-#define PUBACK 4
+#define GET 4
 #define PUBREC 5
-#define PUBREL 6
-#define PUBCOMP 7
+#define CREATE 6
+#define ADD 7
 #define SUBSCRIBE 8
 #define SUBACK 9
-#define UNSUBSCRIBE 10
-#define UNSUBACK 11
-#define PINGREQ 12
-#define PINGRESP 13
-#define DISCONNECT 14
+#define SENDFILE 10
+#define DOWNFILE 11
 
 struct Accounts {
     char name[50];
@@ -51,12 +52,36 @@ struct Clients {
     char username[50];
 };
 
+struct Rooms {
+    char name[50];
+    int count;
+    char *list[50];
+};
+
 int get_account(struct Accounts []);
 
 struct Accounts decode_packet_connect(char *buff);
 
 bool authentication(struct Accounts, struct Accounts acc[], int n);
 
-void create_account(struct Accounts a);
+bool create_account(struct Accounts a, struct Accounts acc[], int n);
+
+char *packet_connack(int retCode, int x);
+
+char *packet_add(int, char, char);
+
+char *packet_pubrec(char *msg);
+
+bool chat_user(int sockfd, struct Clients [], int, char *, bool);
+
+bool chat_room(int sockfd, struct Rooms [], int, struct Clients [], int, char *, bool);
+
+int decode_packet_connack(char *packet);
+
+void decode_packet_pubrec(char *msg);
+
+bool process_recv_file(int, char *);
+
+bool process_send_file(int, char *);
 
 #endif //PROJECT_DEFINITION_H

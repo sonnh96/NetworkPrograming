@@ -9,60 +9,195 @@ int noacc = 0;
 
 struct Clients clients[100];
 int nocl = 0;
+
+struct Rooms rooms[100];
+int nor = 0;
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+void send_file(int sockfd, char *buff) {
+    buff = buff + 1;
+    printf("File: %s\n", buff);
+    process_send_file(sockfd, buff);
+}
 
-void set_connect(int sock, char *buff) {
-    struct Accounts a = decode_packet_connect(buff);
-    if (authentication(a, acc, noacc)) {
-        printf("Connect success!");
-        pthread_mutex_lock(&mutex);
-        clients[nocl].socket = sock;
-        strcpy(clients[nocl].username, a.name);
-        nocl++;
-        pthread_mutex_unlock(&mutex);
-    } else {
-        printf("Disconnect!");
-        close(sock);
+void recv_file(int sockfd, char *buff) {
+    if ((*buff & 15) == 0) {
+        chat_user(sockfd, clients, nocl, buff, TRUE);
+    } else if ((*buff & 15) == 1) {
+        chat_room(sockfd, rooms, nor, clients, nocl, buff, TRUE);
     }
 }
 
-void subscribe(int sockfd, char *buff) {
-    printf("Subcribe");
+void add_user(int sockfd, char *buff) {
+    buff = buff + 1;
+    int i;
+    char *room, *token;
+    room = strtok(buff,".");
+    for (i = 0; i < nor; i++) {
+        if(strcmp(room, rooms[i].name) == 0){
+            token = strtok(NULL, ",");
+            while( token != NULL )
+            {
+                rooms[i].list[rooms[i].count] = token;
+                printf("Add: %s: %d", rooms[i].list[rooms[i].count], rooms[i].count);
+                rooms[i].count++;
+                fflush(stdout);
+                token = strtok(NULL, ",");
+            }
+        }
+    }
+}
+
+void create_room(int sockfd, char *buff) {
+    buff = buff + 1;
+    strcpy(rooms[nor].name, buff);
+    printf("Hello: %s: %d", rooms[nor].name, nor);
+    nor++;
+    fflush(stdout);
+}
+
+void check_publish(int sockfd, char *buff) {
+    if ((*buff & 15) == 0) {
+        chat_user(sockfd, clients, nocl, buff, FALSE);
+    } else if ((*buff & 15) == 1) {
+        chat_room(sockfd, rooms, nor, clients, nocl, buff, FALSE);
+    }
+}
+
+void get_list(int sock){
+    char sendbuff[MAXLINE];
+    char *msg;
+    int i;
+    memset(sendbuff, 0, MAXLINE);
+    strcpy(sendbuff, "List users online: ");
+    for(i = 0; i < nocl; i++) {
+        if (clients[i].username != NULL)
+        {
+            strcat(sendbuff,clients[i].username);
+            strcat(sendbuff,", ");
+        }
+    }
+    strcat(sendbuff, "\nList rooms: ");
+    for(i = 0; i < nor; i++) {
+        strcat(sendbuff,rooms[i].name);
+        strcat(sendbuff,", ");
+    }
+    msg = packet_pubrec(sendbuff);
+    write(sock, msg, strlen(msg));
+}
+void set_connect(int sockfd, char *buff) {
+    char *sb;
+    printf("Connect!\n");
     struct Accounts a = decode_packet_connect(buff);
-    create_account(a);
-//    pthread_mutex_lock(&mutex);
-//    noacc = get_account(acc);
-//    pthread_mutex_unlock(&mutex);
+    if (authentication(a, acc, noacc)) {
+        pthread_mutex_lock(&mutex);
+        printf("Connect success!\n");
+        clients[nocl].socket = sockfd;
+        strcpy(clients[nocl].username, a.name);
+        nocl++;
+        pthread_mutex_unlock(&mutex);
+        sb = packet_connack(1, CONNACK);
+        write(sockfd, sb, strlen(sb));
+        printf("Sent\n");
+        fflush(stdout);
+    } else {
+        printf("Disconnect!");
+        sb = packet_connack(0, CONNACK);
+        write(sockfd, sb, strlen(sb));
+        close(sockfd);
+    }
+    fflush(stdout);
+}
+
+void create_defaul_room(struct Rooms rooms[]) {
+    strcpy(rooms[0].name, "room1");
+    rooms[0].list[rooms[0].count] = "user1";
+    rooms[0].count++;
+    rooms[0].list[rooms[0].count] = "user2";
+    rooms[0].count++;
+    rooms[0].list[rooms[0].count] = "user3";
+    rooms[0].count++;
+}
+
+void subscribe(int sockfd, char *buff) {
+    char *sb;
+    struct Accounts a = decode_packet_connect(buff);
+    if (create_account(a, acc, noacc)) {
+        noacc++;
+        acc[noacc - 1] = a;
+        fflush(stdout);
+        sb = packet_connack(1, SUBACK);
+        write(sockfd, sb, strlen(sb));
+        memset(sb, 0, MAXLINE);
+    } else {
+        printf("Disconnect!");
+        sb = packet_connack(0, SUBACK);
+        write(sockfd, sb, strlen(sb));
+        close(sockfd);
+    }
+    fflush(stdout);
 }
 
 void *handle(void *iptr) {
     int sockfd = *(int *) iptr;
-    char buff[MAXLINE];
-
+    char *buff;
     while (1) {
-        memset(buff, 0, MAXLINE);
-        if (read(sockfd, buff, 1024) < 0) {
+        buff = malloc(MAXLINE);
+        if (read(sockfd, buff, 1024) <= 0) {
+            close(sockfd);
+            int i,j;
+            pthread_mutex_lock(&mutex);
+            for(i = 0; i < nocl; i++) {
+                if (clients[i].socket == sockfd) {
+                    j = i;
+                    while (j < nocl - 1) {
+                        clients[j] = clients[j + 1];
+                        j++;
+                    }
+                }
+            }
+            nocl--;
+            pthread_mutex_unlock(&mutex);
             break;
+        } else {
+            if (buff[strlen(buff) - 1] == '\n')
+                buff[strlen(buff) - 1] = '\0';
+            if (buff[strlen(buff) - 1] == '\r')
+                buff[strlen(buff) - 1] = '\0';
+            int type = (*buff >> 4) & 15;
+            switch (type) {
+                case CONNECT:
+                    set_connect(sockfd, buff);
+                    continue;
+                case SUBSCRIBE:
+                    subscribe(sockfd, buff);
+                    continue;
+                case GET:
+                    get_list(sockfd);
+                    continue;
+                case PUBLISH:
+                    check_publish(sockfd, buff);
+                    continue;
+                case CREATE:
+                    create_room(sockfd, buff);
+                    continue;
+                case SENDFILE:
+                    recv_file(sockfd, buff);
+                    continue;
+                case DOWNFILE:
+                    send_file(sockfd, buff);
+                    continue;
+                case ADD:
+                    add_user(sockfd, buff);
+                    continue;
+                default:
+                    break;
+            }
         }
-        if (buff[strlen(buff) - 1] == '\n')
-            buff[strlen(buff) - 1] = '\0';
-        if (buff[strlen(buff) - 1] == '\r')
-            buff[strlen(buff) - 1] = '\0';
-
-        int type = (*buff >> 4) & 15;
-        switch (type) {
-            case CONNECT:
-                set_connect(sockfd, buff);
-                break;
-            case SUBSCRIBE:
-                subscribe(sockfd, buff);
-                break;
-            default:
-                break;
-        }
+        free(buff);
     }
-
+    fflush(stdout);
     return 0;
 }
 
@@ -71,7 +206,6 @@ int main(int argc, char const *argv[]) {
     int listenfd;
     socklen_t clilen;
     struct sockaddr_in cliaddr, servaddr;
-    pthread_t tid;
     int *iptr;
 
     listenfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -93,8 +227,10 @@ int main(int argc, char const *argv[]) {
     printf("Server is listening at port %d\n", servaddr.sin_port);
 
     noacc = get_account(acc);
-
+    create_defaul_room(rooms);
+    nor++;
     while (1) {
+        pthread_t tid;
         iptr = malloc(sizeof(int));
         clilen = sizeof(cliaddr);
         *iptr = accept(listenfd, (SA *) &cliaddr, &clilen);
@@ -103,5 +239,5 @@ int main(int argc, char const *argv[]) {
         printf("Server get connection from %s\n", s);
         pthread_create(&tid, NULL, &handle, (void *) iptr);
     }
-
+    return 0;
 }
