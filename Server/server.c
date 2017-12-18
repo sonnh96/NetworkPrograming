@@ -42,12 +42,11 @@ void add_user(int sockfd, char *buff) {
     buff = buff + 1;
     int i;
     char *room, *token;
-    room = strtok(buff,".");
+    room = strtok(buff, ".");
     for (i = 0; i < nor; i++) {
-        if(strcmp(room, rooms[i].name) == 0){
+        if (strcmp(room, rooms[i].name) == 0) {
             token = strtok(NULL, ",");
-            while( token != NULL )
-            {
+            while (token != NULL) {
                 rooms[i].list[rooms[i].count] = token;
                 printf("Add: %s: %d", rooms[i].list[rooms[i].count], rooms[i].count);
                 rooms[i].count++;
@@ -74,27 +73,27 @@ void check_publish(int sockfd, char *buff) {
     }
 }
 
-void get_list(int sock){
+void get_list(int sock) {
     char sendbuff[MAXLINE];
     char *msg;
     int i;
     memset(sendbuff, 0, MAXLINE);
     strcpy(sendbuff, "List users online: ");
-    for(i = 0; i < nocl; i++) {
-        if (clients[i].username != NULL)
-        {
-            strcat(sendbuff,clients[i].username);
-            strcat(sendbuff,", ");
+    for (i = 0; i < nocl; i++) {
+        if (clients[i].username != NULL) {
+            strcat(sendbuff, clients[i].username);
+            strcat(sendbuff, ", ");
         }
     }
     strcat(sendbuff, "\nList rooms: ");
-    for(i = 0; i < nor; i++) {
-        strcat(sendbuff,rooms[i].name);
-        strcat(sendbuff,", ");
+    for (i = 0; i < nor; i++) {
+        strcat(sendbuff, rooms[i].name);
+        strcat(sendbuff, ", ");
     }
     msg = packet_pubrec(sendbuff);
     write(sock, msg, strlen(msg));
 }
+
 void set_connect(int sockfd, char *buff) {
     char *sb;
     struct Accounts a = decode_packet_connect(buff);
@@ -153,9 +152,9 @@ void *handle(void *iptr) {
         buff = malloc(MAXLINE);
         if (read(sockfd, buff, 1024) <= 0) {
             close(sockfd);
-            int i,j;
+            int i, j;
             pthread_mutex_lock(&mutex);
-            for(i = 0; i < nocl; i++) {
+            for (i = 0; i < nocl; i++) {
                 if (clients[i].socket == sockfd) {
                     j = i;
                     while (j < nocl - 1) {

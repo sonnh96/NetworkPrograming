@@ -117,7 +117,6 @@ bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) 
     memset(send, 0, MAXLINE);
     target = strtok(buff, ".");
     msg = strtok(NULL, "");
-    printf("1.%s.%s\n", target, msg);
     int i, des = 0;
     for (i = 0; i < n; i++) {
         if (sockfd == clients[i].socket) {
@@ -135,8 +134,6 @@ bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) 
     }
     strcat(send, msg);
     strcpy(send, packet_pubrec(send));
-    printf("Chat: %s\n", send);
-    fflush(stdout);
     if (des != 0) {
         write(des, send, strlen(send));
         return true;
@@ -152,7 +149,6 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
     memset(send, 0, MAXLINE);
     target = strtok(buff, ".");
     msg = strtok(NULL, "");
-    printf("1.%s.%s\n", target, msg);
     int i, j, k, des = 0;
     for (i = 0; i < n1; i++) {
         if (sockfd == clients[i].socket) {
@@ -170,8 +166,6 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
     strcat(send, ": ");
     strcat(send, msg);
     strcpy(send, packet_pubrec(send));
-    printf("Chat: %s\n", send);
-    fflush(stdout);
     for (i = 0; i < n; i++) {
         if (strcmp(target, rooms[i].name) == 0) {
             for (j = 0; j < n1; j++) {
@@ -212,7 +206,6 @@ void process_recv_file(int sockfd, char *filename) {
     if (file_size == 0) {
         printf("%s\n", recvbuff);
     } else {
-        printf("File size: %d\n", file_size);
         f = fopen(filename, "w+");
         if (f == NULL) {
             perror("Can't open file");
@@ -239,7 +232,6 @@ void process_send_file(int sockfd, char *filename) {
     memset(sendbuff, 0, MAXLINE);
     fd = fopen(filename, "r+");
     if (fd == NULL) {
-        printf("File does not exist\n");
         strcpy(sendbuff, "File does not exist");
         write(sockfd, sendbuff, sizeof(sendbuff));
     } else {

@@ -117,12 +117,6 @@ void printProgress(double process) {
     fflush(stdout);
 }
 
-char *packet_fileack(int x) {
-    char *packet = malloc(1);
-    *packet |= x;
-    return packet;
-}
-
 void process_recv_file(int sockfd, char *filename) {
     ssize_t n;
     char recvbuff[MAXLINE];
@@ -136,14 +130,10 @@ void process_recv_file(int sockfd, char *filename) {
     if (file_size == 0) {
         printf("%s\n", recvbuff);
     } else {
-        printf("File size: %d\n", file_size);
-
         f = fopen(filename, "w+");
-
         if (f == NULL) {
             perror("Can't open file");
         }
-
         while (remain < file_size) {
             n = read(sockfd, buffer, MAXLINE);
             fwrite(buffer, sizeof(char), n, f);

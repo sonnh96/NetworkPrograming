@@ -80,7 +80,7 @@ void add_user(int sock) {
 void create_room(int sock) {
     char name[50];
     char *sendbuff;
-    printf("Enter name of room1: ");
+    printf("Enter name of room: ");
     fflush(stdin);
     fgets(name, sizeof(name), stdin);
     name[strlen(name) - 1] = '\0';
