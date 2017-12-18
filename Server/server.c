@@ -14,10 +14,19 @@ struct Rooms rooms[100];
 int nor = 0;
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t mutex1 = PTHREAD_MUTEX_INITIALIZER;
 
 void send_file(int sockfd, char *buff) {
     buff = buff + 1;
     printf("File: %s\n", buff);
+    size_t len;
+    len = HEADER_LEN + strlen(buff);
+    char *packet = malloc(len);
+    char *pp = packet;
+    *pp = SENDFILE << 4;
+    strcat(pp, buff);
+    write(sockfd, packet, strlen(packet));
+    usleep(200);
     process_send_file(sockfd, buff);
 }
 
@@ -88,21 +97,17 @@ void get_list(int sock){
 }
 void set_connect(int sockfd, char *buff) {
     char *sb;
-    printf("Connect!\n");
     struct Accounts a = decode_packet_connect(buff);
     if (authentication(a, acc, noacc)) {
         pthread_mutex_lock(&mutex);
-        printf("Connect success!\n");
         clients[nocl].socket = sockfd;
         strcpy(clients[nocl].username, a.name);
         nocl++;
         pthread_mutex_unlock(&mutex);
         sb = packet_connack(1, CONNACK);
         write(sockfd, sb, strlen(sb));
-        printf("Sent\n");
         fflush(stdout);
     } else {
-        printf("Disconnect!");
         sb = packet_connack(0, CONNACK);
         write(sockfd, sb, strlen(sb));
         close(sockfd);
@@ -121,21 +126,23 @@ void create_defaul_room(struct Rooms rooms[]) {
 }
 
 void subscribe(int sockfd, char *buff) {
-    char *sb;
     struct Accounts a = decode_packet_connect(buff);
+    pthread_mutex_lock(&mutex1);
     if (create_account(a, acc, noacc)) {
+        acc[noacc] = a;
         noacc++;
-        acc[noacc - 1] = a;
-        fflush(stdout);
-        sb = packet_connack(1, SUBACK);
-        write(sockfd, sb, strlen(sb));
-        memset(sb, 0, MAXLINE);
+        pthread_mutex_lock(&mutex);
+        clients[nocl].socket = sockfd;
+        strcpy(clients[nocl].username, a.name);
+        nocl++;
+        pthread_mutex_unlock(&mutex);
+        write(sockfd, packet_connack(1, SUBACK), 1);
     } else {
         printf("Disconnect!");
-        sb = packet_connack(0, SUBACK);
-        write(sockfd, sb, strlen(sb));
+        write(sockfd, packet_connack(0, SUBACK), 1);
         close(sockfd);
     }
+    pthread_mutex_unlock(&mutex1);
     fflush(stdout);
 }
 

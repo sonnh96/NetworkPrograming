@@ -24,6 +24,9 @@
 #define MAXLINE     1024
 #define SA  struct sockaddr
 #define LISTENQ     1024
+#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PBWIDTH 70
+
 #define HEADER_LEN 1
 #define CONNECT 1
 #define CONNACK 2
@@ -36,6 +39,7 @@
 #define SUBACK 9
 #define SENDFILE 10
 #define DOWNFILE 11
+#define FILEACK 12
 
 struct Accounts {
     char name[50];
@@ -44,7 +48,6 @@ struct Accounts {
 
 struct Clients {
     int socket;
-    char pswd[50];
     char username[50];
 };
 
@@ -68,8 +71,10 @@ char *packet_pubrec(char *msg);
 
 char *packet_add(int, char *, char *);
 
-bool process_send_file(int, char *);
+char *packet_fileack(int x);
 
-bool process_recv_file(int sockfd, char *filename);
+void process_send_file(int, char *);
+
+void process_recv_file(int sockfd, char *filename);
 
 #endif //PROJECT_DEFINITION_H

@@ -57,7 +57,10 @@ struct Accounts decode_packet_connect(char *buff) {
     if (a.name[strlen(a.name) - 1] == '\n')
         a.name[strlen(a.name) - 1] = '\0';
     strcpy(a.pwd, strtok(NULL, ","));
-    fflush(stdout);
+    if (a.name == NULL || a.pwd == NULL) {
+        strcpy(a.name, "1");
+        strcpy(a.pwd, "1");
+    }
     return a;
 }
 
@@ -87,6 +90,12 @@ char *packet_connack(int y, int x) {
     return packet;
 }
 
+char *packet_fileack(int x) {
+    char *packet = malloc(1);
+    *packet |= x;
+    return packet;
+}
+
 int decode_packet_connack(char *packet) {
     return *packet & 15;
 }
@@ -104,11 +113,11 @@ char *packet_pubrec(char *msg) {
 bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) {
     buff = buff + 1;
     char *msg, *target;
-    char *send = malloc(MAXLINE);
+    char send[MAXLINE];
+    memset(send, 0, MAXLINE);
     target = strtok(buff, ".");
-    printf("target: %s\n", target);
     msg = strtok(NULL, "");
-    printf("msg: %s\n", msg);
+    printf("1.%s.%s\n", target, msg);
     int i, des = 0;
     for (i = 0; i < n; i++) {
         if (sockfd == clients[i].socket) {
@@ -120,35 +129,32 @@ bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) 
     }
     if (x) {
         strcat(send, " send file:");
+        process_recv_file(sockfd, msg);
     } else {
         strcat(send, ": ");
     }
     strcat(send, msg);
-    printf("1: %s\n", send);
-    send = packet_pubrec(send);
-    printf("2: %s\n", send);
-    if (x) {
-        process_recv_file(sockfd, msg);
-    }
+    strcpy(send, packet_pubrec(send));
+    printf("Chat: %s\n", send);
+    fflush(stdout);
     if (des != 0) {
         write(des, send, strlen(send) + 1);
-        free(send);
+        free(packet_pubrec(send));
+        memset(send, 0, MAXLINE);
         return true;
-    } else{
-        free(send);
+    } else {
         return false;
     }
-
 }
 
 bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[], int n1, char *buff, bool x) {
     buff = buff + 1;
     char *msg, *target;
-    char *send = malloc(MAXLINE);
+    char send[MAXLINE];
+    memset(send, 0, MAXLINE);
     target = strtok(buff, ".");
-    printf("target: %s\n", target);
     msg = strtok(NULL, "");
-    printf("msg: %s\n", msg);
+    printf("1.%s.%s\n", target, msg);
     int i, j, k, des = 0;
     for (i = 0; i < n1; i++) {
         if (sockfd == clients[i].socket) {
@@ -158,18 +164,16 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
     }
     if (x) {
         strcat(send, " send file to ");
+        process_recv_file(sockfd, msg);
     } else {
         strcat(send, " send to ");
     }
     strcat(send, target);
     strcat(send, ": ");
     strcat(send, msg);
-    printf("1: %s\n", send);
-    send = packet_pubrec(send);
-    printf("2: %s\n", send);
-    if (x) {
-        process_recv_file(sockfd, msg);
-    }
+    strcpy(send, packet_pubrec(send));
+    printf("Chat: %s\n", send);
+    fflush(stdout);
     for (i = 0; i < n; i++) {
         if (strcmp(target, rooms[i].name) == 0) {
             for (j = 0; j < n1; j++) {
@@ -183,14 +187,23 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
             break;
         }
     }
-    free(send);
+    free(packet_pubrec(send));
+    memset(send, 0, MAXLINE);
     if (des != 0) {
         return true;
     } else
         return false;
 }
 
-bool process_recv_file(int sockfd, char *filename) {
+void printProgress(double process) {
+    int val = (int) (process * 100);
+    int lpad = (int) (process * PBWIDTH);
+    int rpad = PBWIDTH - lpad;
+    printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+    fflush(stdout);
+}
+
+void process_recv_file(int sockfd, char *filename) {
     ssize_t n;
     char recvbuff[MAXLINE];
     FILE *f;
@@ -212,23 +225,21 @@ bool process_recv_file(int sockfd, char *filename) {
             n = read(sockfd, buffer, MAXLINE);
             fwrite(buffer, sizeof(char), n, f);
             remain += n;
+            printProgress((double) remain / file_size);
         }
         fclose(f);
-    }
-    if (remain == file_size) {
-        printf("Recv complete\n");
-        return true;
-    } else {
-        return false;
+        if (remain == file_size) {
+            printf("\nComplete\n");
+        }
     }
 }
 
-bool process_send_file(int sockfd, char *filename) {
+void process_send_file(int sockfd, char *filename) {
     FILE *fd;
     char buffer[MAXLINE];
     char sendbuff[MAXLINE];
-    int file_size, remain = 0;
     ssize_t n;
+    int file_size, remain = 0;
     memset(sendbuff, 0, MAXLINE);
     fd = fopen(filename, "r+");
     if (fd == NULL) {
@@ -246,13 +257,11 @@ bool process_send_file(int sockfd, char *filename) {
             n = fread(buffer, sizeof(char), 1024, fd);
             remain += n;
             write(sockfd, buffer, n);
+            printProgress((double) remain / file_size);
         }
         fclose(fd);
-    }
-    if (remain == file_size) {
-        printf("Send complete\n");
-        return true;
-    } else {
-        return false;
+        if (remain == file_size) {
+            printf("\nComplete\n");
+        }
     }
 }

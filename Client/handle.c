@@ -59,7 +59,9 @@ int decode_packet_connack(char *packet) {
 
 void decode_packet_pubrec(char *msg) {
     msg = msg + 1;
-    printf("%s\n", msg);
+    printf("\r%s\n", msg);
+    printf(">>>");
+    fflush(stdout);
 }
 
 char *packet_create(char *name) {
@@ -107,25 +109,37 @@ char *packet_add(int sock, char *room, char *user) {
     return packet;
 }
 
-bool process_recv_file(int sockfd, char *filename) {
+void printProgress(double process) {
+    int val = (int) (process * 100);
+    int lpad = (int) (process * PBWIDTH);
+    int rpad = PBWIDTH - lpad;
+    printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+    fflush(stdout);
+}
+
+char *packet_fileack(int x) {
+    char *packet = malloc(1);
+    *packet |= x;
+    return packet;
+}
+
+void process_recv_file(int sockfd, char *filename) {
     ssize_t n;
-    char sendbuff[MAXLINE];
     char recvbuff[MAXLINE];
     FILE *f;
     char buffer[MAXLINE];
     int file_size, remain = 0;
-
-    memset(sendbuff, 0, MAXLINE);
     memset(recvbuff, 0, MAXLINE);
-    memset(buffer, 0, 1024);
+    memset(buffer, 0, MAXLINE);
     read(sockfd, recvbuff, MAXLINE);
     file_size = atoi(recvbuff);
-
     if (file_size == 0) {
         printf("%s\n", recvbuff);
     } else {
         printf("File size: %d\n", file_size);
-        f = fopen(sendbuff, "w+");
+
+        f = fopen(filename, "w+");
+
         if (f == NULL) {
             perror("Can't open file");
         }
@@ -134,24 +148,21 @@ bool process_recv_file(int sockfd, char *filename) {
             n = read(sockfd, buffer, MAXLINE);
             fwrite(buffer, sizeof(char), n, f);
             remain += n;
+            printProgress((double) remain / file_size);
         }
-        memset(buffer, 0, 1024);
         fclose(f);
-    }
-    if (remain == file_size){
-        printf("Recv complete\n");
-        return true;
-    } else {
-        return false;
+        if (remain == file_size) {
+            printf("\nComplete\n");
+        }
     }
 }
 
-bool process_send_file(int sockfd, char *filename) {
+void process_send_file(int sockfd, char *filename) {
     FILE *fd;
     char buffer[MAXLINE];
     char sendbuff[MAXLINE];
+    ssize_t n;
     int file_size, remain = 0;
-    ssize_t		n;
     memset(sendbuff, 0, MAXLINE);
     fd = fopen(filename, "r+");
     if (fd == NULL) {
@@ -169,14 +180,11 @@ bool process_send_file(int sockfd, char *filename) {
             n = fread(buffer, sizeof(char), 1024, fd);
             remain += n;
             write(sockfd, buffer, n);
+            printProgress((double) remain / file_size);
         }
-        memset(buffer, 0, 1024);
         fclose(fd);
-    }
-    if (remain == file_size){
-        printf("Send complete\n");
-        return true;
-    } else {
-        return false;
+        if (remain == file_size) {
+            printf("\nComplete\n");
+        }
     }
 }

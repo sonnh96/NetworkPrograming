@@ -14,6 +14,7 @@ SRC = server.c handle.c
 # the build target executable:
 TARGET = server
 
+
 $(TARGET): $(SRC)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
 

@@ -6,6 +6,12 @@
 int sockfd;
 char username[50], password[50];
 
+void recv_file(char *buff) {
+    buff = buff + 1;
+    printf("Recv: %sq", buff);
+    process_recv_file(sockfd, buff);
+}
+
 void download_file(int sock) {
     char file[50];
     size_t len;
@@ -19,7 +25,6 @@ void download_file(int sock) {
     *pp = DOWNFILE << 4;
     strcat(pp, file);
     write(sock, packet, strlen(packet));
-    process_recv_file(sock, file);
     free(packet);
 }
 
@@ -29,7 +34,9 @@ void send_file(int sock) {
     memset(target, 0, 50);
     memset(file, 0, 50);
     LOOP:
-    printf("Enter selection: ");
+    printf("Type \"0\" to send to user\n");
+    printf("Type \"1\" to send to room\n");
+    printf(">>>");
     scanf("%d", &opt);
     getchar();
     if (opt == 0) {
@@ -49,12 +56,10 @@ void send_file(int sock) {
     fflush(stdin);
     fgets(file, 50, stdin);
     file[strlen(file) - 1] = '\0';
-    printf("Target: %s\n", target);
     buff = packet_sendfile(target, file, opt);
-    printf("Filesend: %sa\n", buff);
     write(sock, buff, strlen(buff));
+    usleep(200);
     process_send_file(sock, file);
-    free(buff);
 }
 
 void add_user(int sock) {
@@ -87,7 +92,9 @@ void chat(int sock) {
     int opt;
     char target[50], msg[MAXLINE], *buff;
     LOOP:
-    printf("Enter selection: ");
+    printf("Type \"0\" to send to user\n");
+    printf("Type \"1\" to send to room\n");
+    printf(">>>");
     scanf("%d", &opt);
     getchar();
     if (opt == 0) {
@@ -108,6 +115,7 @@ void chat(int sock) {
     fgets(msg, MAXLINE, stdin);
     msg[strlen(msg) - 1] = '\0';
     buff = packet_publish(target, msg, opt);
+    printf("Chat: %s\n", buff);
     write(sock, buff, strlen(buff));
     fflush(stdout);
 }
@@ -125,7 +133,16 @@ void check_ack(char *buff) {
         printf("Fail!\n");
         exit(1);
     } else {
-        printf("Success!\n");
+        printf(".-------------------------------------------------.\n");
+        printf("|1. Type: \"chat\" to chat                          |\n");
+        printf("|2. Type: \"get\" to get list users and rooms       |\n");
+        printf("|3. Type: \"create\" to create room                 |\n");
+        printf("|4. Type: \"add\" to add user to the room           |\n");
+        printf("|5. Type: \"sendfile\" to send file                 |\n");
+        printf("|6. Type: \"downfile\" to download file             |\n");
+        printf("|7. Type: \"exit\" to exit program                  |\n");
+        printf("*-------------------------------------------------*\n");
+        printf(">>>");
     }
     fflush(stdout);
 }
@@ -182,6 +199,9 @@ void *recv_msg(void *sockfd) {
                 case PUBREC:
                     decode_packet_pubrec(buff);
                     continue;
+                case SENDFILE:
+                    recv_file(buff);
+                    continue;
                 default:
                     break;
             }
@@ -195,7 +215,6 @@ void *send_msg(void *sockfd) {
     int connfd = *((int *) sockfd);
     char option[10];
     while (1) {
-        printf("Enter options: ");
         fflush(stdin);
         fgets(option, sizeof(option), stdin);
         option[strlen(option) - 1] = '\0';
@@ -211,7 +230,10 @@ void *send_msg(void *sockfd) {
             download_file(connfd);
         } else if (strcmp(option, "add") == 0) {
             add_user(connfd);
+        } else if (strcmp(option, "exit") == 0) {
+            exit(1);
         }
+        printf(">>>");
     }
     return 0;
 }

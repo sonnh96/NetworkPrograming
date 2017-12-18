@@ -28,6 +28,10 @@
 #define MAXLINE     1024
 #define SA  struct sockaddr
 #define LISTENQ     1024
+
+#define PBSTR "||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||"
+#define PBWIDTH 70
+
 #define HEADER_LEN 1
 #define CONNECT 1
 #define CONNACK 2
@@ -40,6 +44,7 @@
 #define SUBACK 9
 #define SENDFILE 10
 #define DOWNFILE 11
+#define FILEACK 12
 
 struct Accounts {
     char name[50];
@@ -67,9 +72,11 @@ bool create_account(struct Accounts a, struct Accounts acc[], int n);
 
 char *packet_connack(int retCode, int x);
 
-char *packet_add(int, char, char);
+char *packet_add(int, char *, char *);
 
 char *packet_pubrec(char *msg);
+
+char *packet_fileack(int x);
 
 bool chat_user(int sockfd, struct Clients [], int, char *, bool);
 
@@ -79,8 +86,8 @@ int decode_packet_connack(char *packet);
 
 void decode_packet_pubrec(char *msg);
 
-bool process_recv_file(int, char *);
+void process_recv_file(int, char *);
 
-bool process_send_file(int, char *);
+void process_send_file(int, char *);
 
 #endif //PROJECT_DEFINITION_H

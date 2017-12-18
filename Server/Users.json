@@ -4,7 +4,5 @@
   {"username": "user2",
     "password": "pass2"},
   {"username": "user3",
-    "password": "pass3"},
-	{"username" : "son123",
-	"password" : "12345"}
+    "password": "pass3"}
 ]
