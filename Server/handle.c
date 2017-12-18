@@ -138,9 +138,7 @@ bool chat_user(int sockfd, struct Clients clients[], int n, char *buff, bool x) 
     printf("Chat: %s\n", send);
     fflush(stdout);
     if (des != 0) {
-        write(des, send, strlen(send) + 1);
-        free(packet_pubrec(send));
-        memset(send, 0, MAXLINE);
+        write(des, send, strlen(send));
         return true;
     } else {
         return false;
@@ -180,15 +178,13 @@ bool chat_room(int sockfd, struct Rooms rooms[], int n, struct Clients clients[]
                 for (k = 0; k < rooms[i].count; k++) {
                     if (strcmp(rooms[i].list[k], clients[j].username) == 0 && clients[j].socket != sockfd) {
                         des = clients[j].socket;
-                        write(des, send, strlen(send) + 1);
+                        write(des, send, strlen(send));
                     }
                 }
             }
             break;
         }
     }
-    free(packet_pubrec(send));
-    memset(send, 0, MAXLINE);
     if (des != 0) {
         return true;
     } else
