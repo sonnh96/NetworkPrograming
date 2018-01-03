@@ -145,8 +145,6 @@ void process_recv_file(int sockfd, char *filename) {
             printf("\nComplete\n");
         }
     }
-    memset(recvbuff, 0, MAXLINE);
-    memset(buffer, 0, MAXLINE);
 }
 
 void process_send_file(int sockfd, char *filename) {
@@ -179,6 +177,4 @@ void process_send_file(int sockfd, char *filename) {
             printf("\nComplete\n");
         }
     }
-    memset(sendbuff, 0, MAXLINE);
-    memset(buffer, 0, MAXLINE);
 }
